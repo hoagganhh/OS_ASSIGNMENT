@@ -12,7 +12,9 @@ int empty(struct queue_t *q)
 void enqueue(struct queue_t *q, struct pcb_t *proc)
 {
         /* TODO: put a new process to queue [q] */
-        //Check if the queue is full before adding
+        if(q == NULL || proc == NULL){
+                return;
+        }
         if (q->size < MAX_QUEUE_SIZE) {
                 q->proc[q->size] = proc;
                 q->size++;
@@ -27,52 +29,67 @@ struct pcb_t *dequeue(struct queue_t *q)
         /* TODO: return a pcb whose prioprity is the highest
          * in the queue [q] and remember to remove it from q
          * */
-        //If queue is empty, return NULL
-        if (q->size == 0) {
-                return NULL;
+
+        if(q != NULL && q->size > 0){ //if queue not NULL and empty
+                struct pcb_t *proc = NULL;
+                int remove_index = -1;
+#ifdef MLQ_SCHED //if using MLQ
+                proc = q->proc[0]; //because all process prio are equal in a queue, return procces at head of queue
+                remove_index = 0;
+#else //if not using MLQ
+                int highest_prio = 2147483640;
+                for(int i = 0; i < q->size; i++){ //loop through all process in queue
+                        if(q->proc[i]->priority < highest_prio){ //if prio higher than previous prio
+                                highest_prio = q->proc[i]->priority; //assign current highest prio
+                                remove_index = i; //assign current highest prio index
+                        }
+                }
+
+                if(remove_index != -1){
+                        proc = q->proc[remove_index];
+                }
+#endif
+
+                if(proc != NULL){
+                        for(int i = remove_index + 1; i < q->size; i++){
+                                q->proc[i - 1] = q->proc[i];
+                        }
+                        q->size--;
+                        q->proc[q->size] = NULL;
+                }
+
+                return proc;
         }
 
-        //Therefore, we take the first process in the list (FIFO).
-        struct pcb_t *proc = q->proc[0];
-
-        for (int i = 0; i < q->size - 1; i++) {    //Shift the remaining processes to the left to fill the gap
-                q->proc[i] = q->proc[i + 1];
-        }
-
-        //Decrease the size of the queue
-        q->size--;
-        q->proc[q->size] = NULL; //Clear the last pointer 
-
-        return proc;
+	return NULL;
 }
 
 struct pcb_t *purgequeue(struct queue_t *q, struct pcb_t *proc)
 {
         /* TODO: remove a specific item from queue
          * */
-       if (empty(q)) return NULL;
 
-    int index = -1;
-    struct pcb_t *found_proc = NULL;
+        if(q != NULL && proc != NULL && !empty(q)){
+                int index = -1;
+                struct pcb_t *found_proc = NULL;
 
-    //Find the index of the process in the queue
-    for (int i = 0; i < q->size; i++) {
-        if (q->proc[i] == proc) {
-            index = i;
-            found_proc = q->proc[i];
-            break;
+                for(int i = 0; i < q->size; i++){
+                        if(q->proc[i]->pid == proc->pid){
+                                index = i;
+                                found_proc = q->proc[i];
+                                break;
+                        }
+                }
+
+                if(index >= 0 && found_proc != NULL){
+                        for(int i = index + 1; i < q->size; i++){
+                                q->proc[i - 1] = q->proc[i];
+                        }
+                        q->size--;
+                        q->proc[q->size] = NULL;
+
+                        return found_proc;
+                }
         }
-    }
-
-    //If process found, remove it and shift remaining elements
-    if (index != -1) {
-        for (int i = index; i < q->size - 1; i++) {
-            q->proc[i] = q->proc[i + 1];
-        }
-        q->size--;
-        q->proc[q->size] = NULL;
-        return found_proc;
-    }
-
-    return NULL;
+        return NULL;
 }
