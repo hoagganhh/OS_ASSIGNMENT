@@ -1,3 +1,4 @@
+
 #include "mem.h"
 #include "stdlib.h"
 #include "string.h"
@@ -40,95 +41,80 @@ static addr_t get_second_lv(addr_t addr) {
 /* Search for page table table from the a segment table */
 static struct trans_table_t * get_trans_table(
 		addr_t index, 	// Segment level index
-		struct page_table_t * page_table, // first level table
-		struct pcb_t * proc) {
+		struct page_table_t * page_table) { // first level table
+	
+	/* DO NOTHING HERE. This mem is obsoleted */
+
+	int i;
+	for (i = 0; i < page_table->size; i++) {
+		// Enter your code here
+	}
 	return NULL;
+
 }
 
 /* Translate virtual address to physical address. If [virtual_addr] is valid,
  * return 1 and write its physical counterpart to [physical_addr].
  * Otherwise, return 0 */
-int translate(addr_t virtual_addr, addr_t * physical_addr, struct pcb_t * proc) {
-	/* Determine physical address from virtual address [virtual_addr] */
-	
-	/* Check if the process has a valid memory management structure */
-	if (proc == NULL || proc->mm == NULL || proc->mm->pgd == NULL) {
-		return 0; 
-	}
+static int translate(
+		addr_t virtual_addr, 	// Given virtual address
+		addr_t * physical_addr, // Physical address to be returned
+		struct pcb_t * proc) {  // Process uses given virtual address
 
-	/* Get Page Number (PGN) and Offset from Virtual Address */
-	/* Assuming macros are defined in mm.h (included via mem.h or implicitly) */
-	/* PGN extraction logic typically: virtual_addr >> PAGING_ADDR_FPN_LOBIT */
+	/* Offset of the virtual address */
+	addr_t offset = get_offset(virtual_addr);
+        offset++; offset--;
+	/* The first layer index */
+	addr_t first_lv = get_first_lv(virtual_addr);
+	/* The second layer index */
+	addr_t second_lv = get_second_lv(virtual_addr);
 	
-	/* Note: Based on mm.c implementation, we use Single-Level Paging */
-	addr_t pgn = PAGING_PGN(virtual_addr);
-	addr_t offset = PAGING_OFFST(virtual_addr);
-
-	/* Check bounds if necessary */
-	if (pgn >= PAGING_MAX_PGN) {
+	/* Search in the first level */
+	struct trans_table_t * trans_table = NULL;
+	trans_table = get_trans_table(first_lv, proc->page_table);
+	if (trans_table == NULL) {
 		return 0;
 	}
 
-	/* Lookup the Page Table Entry (PTE) in the process's Page Directory */
-	addr_t pte = proc->mm->pgd[pgn];
-
-	/* Check if the page is PRESENT */
-	if (PAGING_PTE_PAGE_PRESENT(pte)) {
-		/* Extract Frame Page Number (FPN) from PTE */
-		addr_t fpn = PAGING_PTE_FPN(pte);
-		
-		/* Calculate Physical Address: (FPN * PageSize) + Offset */
-		*physical_addr = (fpn * PAGING_PAGESZ) + offset;
-		
-		return 1; // Success
+	int i;
+	for (i = 0; i < trans_table->size; i++) {
+		if (trans_table->table[i].v_index == second_lv) {
+			/* DO NOTHING HERE. This mem is obsoleted */
+			return 1;
+		}
 	}
-
-	return 0; // Page fault or Invalid address
+	return 0;	
 }
 
-int alloc_mem(int num_pages, struct pcb_t * proc) {
-	int i, j;
-	int ret_mem = 0;
-	int num_allocated = 0;
-	int previous_page = -1;
-
+addr_t alloc_mem(uint32_t size, struct pcb_t * proc) {
 	pthread_mutex_lock(&mem_lock);
+	addr_t ret_mem = 0;
+	/* DO NOTHING HERE. This mem is obsoleted */
 
-	/* Find [num_pages] free frames in _mem_stat */
-	int free_pages_found = 0;
-	for (i = 0; i < NUM_PAGES; i++) {
-		if (_mem_stat[i].proc == 0) {
-			free_pages_found++;
-		}
-	}
+	uint32_t num_pages = (size % PAGE_SIZE) ? size / PAGE_SIZE :
+		size / PAGE_SIZE + 1; // Number of pages we will use
+	int mem_avail = 0; // We could allocate new memory region or not?
 
-	/* If enough memory is available */
-	if (free_pages_found >= num_pages && mem_avail) { // Assuming mem_avail is global or macro
-		/* Allocate new memory region to the process (Virtual Address) */
+	/* First we must check if the amount of free memory in
+	 * virtual address space and physical address space is
+	 * large enough to represent the amount of required 
+	 * memory. If so, set 1 to [mem_avail].
+	 * Hint: check [proc] bit in each page of _mem_stat
+	 * to know whether this page has been used by a process.
+	 * For virtual memory space, check bp (break pointer).
+	 * */
+	
+	if (mem_avail) {
+		/* We could allocate new memory region to the process */
 		ret_mem = proc->bp;
-		proc->bp += num_pages * PAGE_SIZE; // Increase Break Pointer
-
-		/* Update status of physical pages in _mem_stat */
-		for (i = 0; i < NUM_PAGES && num_allocated < num_pages; i++) {
-			if (_mem_stat[i].proc == 0) {
-				/* Update entry */
-				_mem_stat[i].proc = proc->pid;
-				_mem_stat[i].index = num_allocated;
-				
-				/* Link the pages if necessary (logic for tracking list) */
-				if (previous_page != -1) {
-					_mem_stat[previous_page].next = i;
-				}
-				previous_page = i;
-				_mem_stat[i].next = -1; // Currently last page
-
-				num_allocated++;
-			}
-		}
-	} else {
-		ret_mem = 0; // Failed to allocate
+		proc->bp += num_pages * PAGE_SIZE;
+		/* Update status of physical pages which will be allocated
+		 * to [proc] in _mem_stat. Tasks to do:
+		 * 	- Update [proc], [index], and [next] field
+		 * 	- Add entries to segment table page tables of [proc]
+		 * 	  to ensure accesses to allocated memory slot is
+		 * 	  valid. */
 	}
-
 	pthread_mutex_unlock(&mem_lock);
 	return ret_mem;
 }
@@ -171,7 +157,7 @@ void dump(void) {
 				_mem_stat[i].next
 			);
 			int j;
-			for (j = i << OFFSET_LEN;
+			for (	j = i << OFFSET_LEN;
 				j < ((i+1) << OFFSET_LEN) - 1;
 				j++) {
 				
@@ -183,3 +169,5 @@ void dump(void) {
 		}
 	}
 }
+
+
