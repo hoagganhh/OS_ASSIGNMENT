@@ -88,8 +88,8 @@ struct pcb_t * get_mlq_proc(void) {
 		}
 	}
 	
-	// if (proc != NULL) //ìf there are available process, enqueue it back to the queue
-	// 	enqueue(&running_list, proc);
+	if (proc != NULL) //ìf there are available process, enqueue it back to the queue
+		enqueue(&running_list, proc);
 
 	pthread_mutex_unlock(&queue_lock);
 	return proc;	//return process for dispatch

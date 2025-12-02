@@ -31,7 +31,7 @@ int __sys_ni_syscall(struct krnl_t *krnl, struct sc_regs *regs)
    /*
     * DUMMY systemcall
     */
-
+   printf("ERROR: Syscall %d not implemented!\n", regs->orig_ax);
    return 0;
 }
 

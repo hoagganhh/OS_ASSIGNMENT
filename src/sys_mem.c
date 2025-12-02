@@ -26,11 +26,11 @@ int __sys_memmap(struct krnl_t *krnl, uint32_t pid, struct sc_regs* regs)
 {
    int memop = regs->a1;
    BYTE value;
-   
+   struct pcb_t *caller = NULL;
    /* TODO THIS DUMMY CREATE EMPTY PROC TO AVOID COMPILER NOTIFY 
     *      need to be eliminated
 	*/
-   struct pcb_t *caller = malloc(sizeof(struct pcb_t));
+   //struct pcb_t *caller = malloc(sizeof(struct pcb_t));
 
    /*
     * @bksysnet: Please note in the dual spacing design
@@ -40,6 +40,21 @@ int __sys_memmap(struct krnl_t *krnl, uint32_t pid, struct sc_regs* regs)
    /* TODO: Traverse proclist to terminate the proc
     *       stcmp to check the process match proc_name
     */
+   if (krnl->running_list != NULL) 
+   {
+       for (int i = 0; i < krnl->running_list->size; i++) 
+       {
+           struct pcb_t *proc = krnl->running_list->proc[i];
+           if (proc != NULL && proc->pid == pid) 
+           {
+               caller = proc;
+               break; 
+           }
+       }
+   }
+   if (caller == NULL) {
+       return -1;
+   }
 //	struct queue_t *running_list = krnl->running_list;
 
     /* TODO Maching and marking the process */
@@ -48,7 +63,6 @@ int __sys_memmap(struct krnl_t *krnl, uint32_t pid, struct sc_regs* regs)
 	
    switch (memop) {
    case SYSMEM_MAP_OP:
-            /* Reserved process case*/
 			vmap_pgd_memset(caller, regs->a2, regs->a3);
             break;
    case SYSMEM_INC_OP:

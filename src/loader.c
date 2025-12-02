@@ -1,5 +1,6 @@
 
 #include "loader.h"
+#include "mm.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,6 +42,10 @@ struct pcb_t * load(const char * path) {
 		(struct page_table_t*)malloc(sizeof(struct page_table_t));
 	proc->bp = PAGE_SIZE;
 	proc->pc = 0;
+
+	// Thêm vào nè
+	proc->mm = (struct mm_struct *)calloc(1, sizeof(struct mm_struct));
+    init_mm(proc->mm, proc);
 
 	/* Read process code from file */
 	FILE * file;
@@ -98,6 +103,7 @@ struct pcb_t * load(const char * path) {
 			exit(1);
 		}
 	}
+	fclose(file);
 	return proc;
 }
 
