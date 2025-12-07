@@ -21,3 +21,5 @@ int liballoc(struct pcb_t *, addr_t, uint32_t);
 int libfree(struct pcb_t *, uint32_t);
 int libread(struct pcb_t*, uint32_t, addr_t, uint32_t*);
 int libwrite(struct pcb_t*, BYTE, uint32_t, addr_t);
+int __read(struct pcb_t *caller, int vmaid, int rgid, addr_t offset, BYTE *data);
+int free_pcb_memph(struct pcb_t *caller);

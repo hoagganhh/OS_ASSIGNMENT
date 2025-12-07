@@ -40,4 +40,6 @@ int __mm_swap_page(struct pcb_t *, addr_t , addr_t);
 int libsyscall(struct pcb_t*, uint32_t, arg_t, arg_t, arg_t);
 int syscall(struct krnl_t*, uint32_t, uint32_t, struct sc_regs*);
 int __sys_ni_syscall(struct krnl_t*, struct sc_regs*);
-
+int __sys_killall(struct krnl_t*, uint32_t, struct sc_regs*);
+int __sys_listsyscall(struct krnl_t*, uint32_t, struct sc_regs*);
+int __sys_memmap(struct krnl_t *krnl, uint32_t pid, struct sc_regs* regs);

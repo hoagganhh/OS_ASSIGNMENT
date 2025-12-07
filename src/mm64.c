@@ -584,21 +584,15 @@ int print_list_pgn(struct pgn_t *ip)
 
 int print_pgtbl(struct pcb_t *caller, addr_t start, addr_t end)
 {
-//  addr_t pgn_start;//, pgn_end;
-//  addr_t pgit;
-//  struct krnl_t *krnl = caller->krnl;
+    struct mm_struct *mm = caller->krnl->mm;
 
-  addr_t pgd=0;
-  addr_t p4d=0;
-  addr_t pud=0;
-  addr_t pmd=0;
-  addr_t pt=0;
+    printf("print_pgtbl:\n");
+    printf(" PDG=%p ", (void*)mm->pgd);
+    printf(" P4g=%p ", (void*)mm->p4d);
+    printf(" PUD=%p ", (void*)mm->pud);
+    printf(" PMD=%p\n", (void*)mm->pmd);
 
-  get_pd_from_address(start, &pgd, &p4d, &pud, &pmd, &pt);
-
-  /* TODO traverse the page map and dump the page directory entries */
-
-  return 0;
+    return 0;
 }
 
 #endif  //def MM64
