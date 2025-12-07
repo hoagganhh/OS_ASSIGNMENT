@@ -458,11 +458,11 @@ int init_mm(struct mm_struct *mm, struct pcb_t *caller)
   struct vm_area_struct *vma0 = malloc(sizeof(struct vm_area_struct));
 
   /* TODO init page table directory */
-  mm->pgd = calloc(PAGING_MAX_PGN, sizeof(addr_t));
-  mm->p4d = calloc(PAGING_MAX_PGN, sizeof(addr_t));
-  mm->pud = calloc(PAGING_MAX_PGN, sizeof(addr_t));
-  mm->pmd = calloc(PAGING_MAX_PGN, sizeof(addr_t));
-  mm->pt  = calloc(PAGING_MAX_PGN, sizeof(addr_t));
+  mm->pgd = calloc(PAGING64_ENTRY_PER_TABLE, sizeof(uint64_t));
+  mm->p4d = calloc(PAGING64_ENTRY_PER_TABLE, sizeof(uint64_t));
+  mm->pud = calloc(PAGING64_ENTRY_PER_TABLE, sizeof(uint64_t));
+  mm->pmd = calloc(PAGING64_ENTRY_PER_TABLE, sizeof(uint64_t));
+  mm->pt  = calloc(PAGING64_ENTRY_PER_TABLE, sizeof(uint64_t));
 
 
   /* By default the owner comes with at least one vma */
@@ -584,7 +584,20 @@ int print_list_pgn(struct pgn_t *ip)
 
 int print_pgtbl(struct pcb_t *caller, addr_t start, addr_t end)
 {
-    struct mm_struct *mm = caller->krnl->mm;
+//  addr_t pgn_start;//, pgn_end;
+//  addr_t pgit;
+//  struct krnl_t *krnl = caller->krnl;
+
+  addr_t pgd=0;
+  addr_t p4d=0;
+  addr_t pud=0;
+  addr_t pmd=0;
+  addr_t pt=0;
+
+  get_pd_from_address(start, &pgd, &p4d, &pud, &pmd, &pt);
+
+  /* TODO traverse the page map and dump the page directory entries */
+   struct mm_struct *mm = caller->krnl->mm;
 
     printf("print_pgtbl:\n");
     printf(" PDG=%p ", (void*)mm->pgd);
@@ -592,7 +605,7 @@ int print_pgtbl(struct pcb_t *caller, addr_t start, addr_t end)
     printf(" PUD=%p ", (void*)mm->pud);
     printf(" PMD=%p\n", (void*)mm->pmd);
 
-    return 0;
+  return 0;
 }
 
 #endif  //def MM64
