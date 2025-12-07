@@ -246,11 +246,11 @@ addr_t vmap_page_range(struct pcb_t *caller,           // process call
 {                                                   // no guarantee all given pages are mapped
   struct framephy_struct *fpit = frames;
   int pgit = 0;
-  addr_t base_pgn = addr / PAGING_PAGESZ;
+  addr_t base_pgn = addr / PAGING64_ENTRY_PER_TABLE;
 
   /* TODO: update the rg_end and rg_start of ret_rg */
   ret_rg->rg_start = addr;
-  ret_rg->rg_end = addr + pgnum * PAGING_PAGESZ - 1;
+  ret_rg->rg_end = addr + pgnum * PAGING64_ENTRY_PER_TABLE - 1;
   //ret_rg->vmaid = ...
 
   /* TODO map range of frame to address space
@@ -435,10 +435,10 @@ int __swap_cp_page(struct memphy_struct *mpsrc, addr_t srcfpn,
 {
   int cellidx;
   addr_t addrsrc, addrdst;
-  for (cellidx = 0; cellidx < PAGING_PAGESZ; cellidx++)
+  for (cellidx = 0; cellidx < PAGING64_ENTRY_PER_TABLE; cellidx++)
   {
-    addrsrc = srcfpn * PAGING_PAGESZ + cellidx;
-    addrdst = dstfpn * PAGING_PAGESZ + cellidx;
+    addrsrc = srcfpn * PAGING64_ENTRY_PER_TABLE + cellidx;
+    addrdst = dstfpn * PAGING64_ENTRY_PER_TABLE + cellidx;
 
     BYTE data;
     MEMPHY_read(mpsrc, addrsrc, &data);
